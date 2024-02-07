@@ -1,0 +1,84 @@
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+                  SAM SERVER CONFIGURATION
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+
+cd /opt
+nano Pugu-Road_Enterprise2.py
+
+
+#Python script UsernameFormat
+from alc import radius
+import md5
+nasportid = radius.attributes.get(87)
+shared_secret = '1qttcl1qaz' # this is shared secret between BNG and radius
+
+######### BEGIN VIA 7210SAS-M to PUGU-BNG-01 #########
+
+
+############ BEGIN P2P INTERNET CUSTOMERS to PUGU-BNG-01 ############
+
+
+
+####################### BEGINNING PGR RCIP CUSTOMERS ################################
+
+
+
+####################### DON’T TOUCH BELOW!! ################################
+if radius.attributes.isSet(2):
+        for x in range(16-(len(passwd) % 16)):
+            passwd += '\x00'
+        authenticator = radius.header()['authenticator']
+        hash1 = md5.md5(shared_secret+authenticator).digest()
+        newpass =''.join(chr(ord(a) ^ ord(b)) for a,b in zip(hash1,passwd[:16]))
+        xor1=newpass
+        n=1
+        while n < len(passwd)/16:
+            hash1 = md5.md5(shared_secret+xor1).digest()
+            xor1 = ''.join(chr(ord(a) ^ ord(b)) for a,b in zip(hash1,passwd[n*16:(n+1)*16]))
+            newpass += xor1
+            n += 1
+        radius.attributes.set(2,newpass)
+
+
+
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+                                      BNG CONFIGURATION
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+
+aaa configuration : url link to sam server
+-------------------------------------------
+
+/configure aaa
+ radius-script-policy "change-enterprise2" create
+            primary
+                script-url "ftp://*:*@10.1.4.4/opt/Pugu-Road_Enterprise2.py"
+                no shutdown
+            exit
+            secondary
+                script-url "ftp://*:*@10.1.4.11/opt/Pugu-Road_Enterprise2.py"
+                no shutdown
+            exit
+        exit
+
+
+
+/configure subscriber-mgmt
+ authentication-policy "TTCL-Enterprise2" create
+            password 1qttcl1qaz
+            radius-authentication-server
+                source-address 10.25.2.12
+                router 80012
+                server 1 address 10.25.32.17 secret 1qttcl1qaz
+            exit
+            accept-authorization-change
+            include-radius-attribute
+                nas-port-id
+                nas-identifier
+                nas-port-type 15
+                mac-address
+            exit
+            accept-script-policy "auth-accept"
+            request-script-policy "change-enterprise2"
+        exit
+
+
