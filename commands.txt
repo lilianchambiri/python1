@@ -1,0 +1,19 @@
+/show service service-using
+/show service subscriber-using
+/show aaa radius-script-policy "change-static" script primary
+/show aaa radius-script-policy "change-static" script secondary
+/show aaa radius-script-policy "change-enterprise" script primary
+/show aaa radius-script-policy "change-enterprise" script secondary
+/show aaa radius-script-policy "auth-accept" script primary | match URL post-lines 2
+/show aaa radius-script-policy "auth-accept" script secondary | match URL post-lines 2
+/show aaa radius-script-policy "acct-py" script primary | match URL post-lines 2
+/show aaa radius-script-policy "acct-py" script secondary | match URL post-lines 2
+/show aaa radius-script-policy "change-static" script primary | match URL post-lines 2
+/show aaa radius-script-policy "change-static" script secondary | match URL post-lines 2
+/show aaa radius-script-policy "change-enterprise" script primary | match URL post-lines 2
+/show aaa radius-script-policy "change-enterprise" script secondary | match URL post-lines 2
+/show aaa radius-script-policy "PPPOE_auth-py" script primary | match URL post-lines 2
+/show aaa radius-script-policy "PPPOE_auth-py" script secondary | match URL post-lines 2
+/show aaa radius-script-policy "PPPOE_acct-py" script primary | match URL post-lines 2
+/show aaa radius-script-policy "PPPOE_acct-py" script secondary | match URL post-lines 2
+/show  python python-script "set_called_station_id_avp" source-in-use 
